@@ -83,7 +83,7 @@ function render(events) {
     const d = new Date(date + "T00:00:00");
     const sub = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
     const count = dayEvents.length;
-    const expanded = count > 0; // any day with events shows them by default
+    const expanded = i === 0 && count > 0; // Today auto-expands if it has events
     html += `
       <div class="day-row ${cls} ${count ? "has-events" : "no-events"} ${expanded ? "open" : ""}" data-date="${date}">
         <button class="day-header" ${count ? "" : "disabled"}>

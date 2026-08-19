@@ -1,7 +1,7 @@
 /* Simple service worker: cache the app shell so it opens offline.
  * Event data itself is cached in localStorage by app.js.
  */
-const CACHE_NAME = "family-events-v7";
+const CACHE_NAME = "family-events-v8";
 const APP_SHELL = [
   ".",
   "index.html",
@@ -27,9 +27,16 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  // Only cache-first for same-origin GET (app shell). API calls go to network.
+  // Only handle same-origin GET (app shell). API calls go straight to network.
   if (e.request.method !== "GET" || !e.request.url.startsWith(self.location.origin)) return;
+  // Network-first: always try to fetch the latest, fall back to cache when offline.
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
