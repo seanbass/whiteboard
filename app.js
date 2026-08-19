@@ -7,7 +7,8 @@ const API_URL = "https://script.google.com/macros/s/AKfycby-ToUBXQ9PKCR5EglIhIS0
 
 const eventsList = document.getElementById("eventsList");
 const addSection = document.getElementById("addSection");
-const toggleAddBtn = document.getElementById("toggleAddBtn");
+const settingsBtn = document.getElementById("settingsBtn");
+const backBtn = document.getElementById("backBtn");
 const addForm = document.getElementById("addForm");
 const saveBtn = document.getElementById("saveBtn");
 const refreshBtn = document.getElementById("refreshBtn");
@@ -48,36 +49,59 @@ function dayLabel(dateStr) {
 }
 
 // ---------- rendering ----------
+// Week-at-a-glance: a card for each of the next 7 days; tap a day to expand
+// its events. Anything past 7 days appears in a "Later" section.
 function render(events) {
   const upcoming = events
     .filter((e) => e.date >= todayStr())
     .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
 
-  if (upcoming.length === 0) {
-    eventsList.innerHTML = '<p class="empty">No upcoming events.<br>Enjoy the free time!</p>';
-    return;
+  const byDate = {};
+  for (const e of upcoming) (byDate[e.date] ||= []).push(e);
+
+  let html = "";
+  for (let i = 0; i < 7; i++) {
+    const date = todayStr(i);
+    const dayEvents = byDate[date] || [];
+    const { label, cls } = dayLabel(date);
+    const d = new Date(date + "T00:00:00");
+    const sub = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const count = dayEvents.length;
+    const expanded = i === 0 && count > 0; // Today auto-expands if it has events
+    html += `
+      <div class="day-row ${cls} ${count ? "has-events" : "no-events"} ${expanded ? "open" : ""}" data-date="${date}">
+        <button class="day-header" ${count ? "" : "disabled"}>
+          <span class="day-name">${label}</span>
+          <span class="day-sub">${sub}</span>
+          <span class="day-count">${count ? `${count} event${count > 1 ? "s" : ""} ▾` : "—"}</span>
+        </button>
+        <div class="day-events">${dayEvents.map(eventCard).join("")}</div>
+      </div>`;
   }
 
-  const groups = {};
-  for (const e of upcoming) (groups[e.date] ||= []).push(e);
+  const later = upcoming.filter((e) => e.date > todayStr(6));
+  if (later.length) {
+    html += `<div class="later-heading">Later</div>`;
+    const groups = {};
+    for (const e of later) (groups[e.date] ||= []).push(e);
+    for (const date of Object.keys(groups)) {
+      const d = new Date(date + "T00:00:00");
+      const label = d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+      html += `<div class="day-group"><div class="day-heading">${label}</div>${groups[date].map(eventCard).join("")}</div>`;
+    }
+  }
 
-  eventsList.innerHTML = Object.keys(groups)
-    .map((date) => {
-      const { label, cls } = dayLabel(date);
-      const cards = groups[date]
-        .map(
-          (e) => `
-        <div class="event-card ${cls}">
-          <div class="event-title">${escapeHtml(e.title)}</div>
-          ${e.time ? `<div class="event-time">${formatTime(e.time)}</div>` : ""}
-          ${e.notes ? `<div class="event-notes">${escapeHtml(e.notes)}</div>` : ""}
-          <button class="event-delete" data-id="${e.id}">Remove</button>
-        </div>`
-        )
-        .join("");
-      return `<div class="day-group"><div class="day-heading ${cls}">${label}</div>${cards}</div>`;
-    })
-    .join("");
+  eventsList.innerHTML = html || '<p class="empty">No upcoming events.<br>Enjoy the free time!</p>';
+}
+
+function eventCard(e) {
+  return `
+    <div class="event-card">
+      <div class="event-title">${escapeHtml(e.title)}</div>
+      ${e.time ? `<div class="event-time">${formatTime(e.time)}</div>` : ""}
+      ${e.notes ? `<div class="event-notes">${escapeHtml(e.notes)}</div>` : ""}
+      <button class="event-delete" data-id="${e.id}">Remove</button>
+    </div>`;
 }
 
 function escapeHtml(s) {
@@ -142,12 +166,12 @@ async function deleteEvent(id) {
 }
 
 // ---------- events ----------
-toggleAddBtn.addEventListener("click", () => {
-  const showing = !addSection.classList.contains("hidden");
-  addSection.classList.toggle("hidden", showing);
-  eventsList.classList.toggle("hidden", !showing);
-  toggleAddBtn.textContent = showing ? "+ Add Event" : "← Back to Events";
-});
+function showAddForm(show) {
+  addSection.classList.toggle("hidden", !show);
+  eventsList.classList.toggle("hidden", show);
+}
+settingsBtn.addEventListener("click", () => showAddForm(true));
+backBtn.addEventListener("click", () => showAddForm(false));
 
 addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -164,7 +188,7 @@ addForm.addEventListener("submit", async (e) => {
     });
     addForm.reset();
     showStatus("Event saved!");
-    toggleAddBtn.click(); // back to list
+    showAddForm(false);
     await loadEvents({ silent: true });
   } catch {
     showStatus("Couldn't save. Check your connection and try again.", true);
@@ -175,6 +199,13 @@ addForm.addEventListener("submit", async (e) => {
 });
 
 eventsList.addEventListener("click", async (e) => {
+  // Expand/collapse a day row
+  const header = e.target.closest(".day-header");
+  if (header) {
+    header.closest(".day-row").classList.toggle("open");
+    return;
+  }
+
   const btn = e.target.closest(".event-delete");
   if (!btn) return;
   if (!confirm("Remove this event?")) return;

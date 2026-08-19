@@ -15,19 +15,23 @@
 <body>
   <header>
     <h1>Family Events</h1>
-    <button id="refreshBtn" title="Refresh" aria-label="Refresh">&#8635;</button>
+    <div class="header-buttons">
+      <button id="refreshBtn" title="Refresh" aria-label="Refresh">&#8635;</button>
+      <button id="settingsBtn" title="Settings" aria-label="Settings">&#9881;</button>
+    </div>
   </header>
 
   <main>
     <section id="status" class="status hidden"></section>
 
-    <!-- Upcoming events list (viewer mode - default) -->
+    <!-- Week view (viewer mode - default) -->
     <section id="eventsList" aria-live="polite">
       <p class="loading">Loading events…</p>
     </section>
 
-    <!-- Add event form (editor mode) -->
+    <!-- Add event form (behind settings cog) -->
     <section id="addSection" class="hidden">
+      <button id="backBtn" type="button">&larr; Back to Events</button>
       <h2>Add an Event</h2>
       <form id="addForm">
         <label for="title">What is it?</label>
@@ -46,10 +50,6 @@
       </form>
     </section>
   </main>
-
-  <footer>
-    <button id="toggleAddBtn">+ Add Event</button>
-  </footer>
 
   <script src="app.js"></script>
 </body>
