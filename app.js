@@ -3,7 +3,7 @@
  * Set API_URL below after deploying apps-script/Code.gs (see README).
  */
 
-const API_URL = ""; // <-- paste your Apps Script Web App URL here
+const API_URL = "https://script.google.com/macros/s/AKfycby-ToUBXQ9PKCR5EglIhIS0nEVw96kYRzchWkXrzuKzU2XWb-vF2u2GraOw5fGU_P4y/exec"; // <-- paste your Apps Script Web App URL here
 
 const eventsList = document.getElementById("eventsList");
 const addSection = document.getElementById("addSection");
