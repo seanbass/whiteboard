@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#2b6cb0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Family Events" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Family Events</title>
+</head>
+<body>
+  <header>
+    <h1>Family Events</h1>
+    <button id="refreshBtn" title="Refresh" aria-label="Refresh">&#8635;</button>
+  </header>
+
+  <main>
+    <section id="status" class="status hidden"></section>
+
+    <!-- Upcoming events list (viewer mode - default) -->
+    <section id="eventsList" aria-live="polite">
+      <p class="loading">Loading events…</p>
+    </section>
+
+    <!-- Add event form (editor mode) -->
+    <section id="addSection" class="hidden">
+      <h2>Add an Event</h2>
+      <form id="addForm">
+        <label for="title">What is it?</label>
+        <input type="text" id="title" name="title" required maxlength="100" placeholder="Doctor appointment" />
+
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" required />
+
+        <label for="time">Time (optional)</label>
+        <input type="time" id="time" name="time" />
+
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" name="notes" rows="2" maxlength="300" placeholder="Bring insurance card"></textarea>
+
+        <button type="submit" id="saveBtn">Save Event</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <button id="toggleAddBtn">+ Add Event</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
