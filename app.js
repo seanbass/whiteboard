@@ -11,7 +11,6 @@ const settingsBtn = document.getElementById("settingsBtn");
 const backBtn = document.getElementById("backBtn");
 const addForm = document.getElementById("addForm");
 const saveBtn = document.getElementById("saveBtn");
-const refreshBtn = document.getElementById("refreshBtn");
 const statusEl = document.getElementById("status");
 
 const CACHE_KEY = "familyEvents";
@@ -186,6 +185,11 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) loadEvents({ silent: true });
 });
 
+// And quietly every 5 minutes while the app stays open
+setInterval(() => {
+  if (!document.hidden) loadEvents({ silent: true });
+}, 5 * 60 * 1000);
+
 addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!API_URL) return showStatus("Set the API URL first (see README).", true);
@@ -229,8 +233,6 @@ eventsList.addEventListener("click", async (e) => {
     showStatus("Couldn't remove it. Try again.", true);
   }
 });
-
-refreshBtn.addEventListener("click", () => loadEvents());
 
 // ---------- init ----------
 if ("serviceWorker" in navigator) {

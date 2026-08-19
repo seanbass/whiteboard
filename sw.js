@@ -1,7 +1,7 @@
 /* Simple service worker: cache the app shell so it opens offline.
  * Event data itself is cached in localStorage by app.js.
  */
-const CACHE_NAME = "family-events-v4";
+const CACHE_NAME = "family-events-v5";
 const APP_SHELL = [
   ".",
   "index.html",
