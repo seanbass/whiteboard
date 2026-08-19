@@ -12,12 +12,19 @@ foreach ($s in 192, 512) {
     # Red header band
     $band = New-Object System.Drawing.Rectangle($pad, [int]($s*0.2), ($s - 2*$pad), [int]($s*0.16))
     $g.FillRectangle([System.Drawing.Brushes]::Firebrick, $band)
-    # Date text
-    $font = New-Object System.Drawing.Font('Segoe UI', [int]($s*0.28), [System.Drawing.FontStyle]::Bold)
-    $fmt = New-Object System.Drawing.StringFormat
-    $fmt.Alignment = 'Center'; $fmt.LineAlignment = 'Center'
-    $textRect = New-Object System.Drawing.RectangleF($pad, ($s*0.36), ($s - 2*$pad), ($s*0.46))
-    $g.DrawString('17', $font, [System.Drawing.Brushes]::Black, $textRect, $fmt)
+    # Date grid (generic dots, no specific number)
+    $dotBrush = New-Object System.Drawing.SolidBrush([System.Drawing.ColorTranslator]::FromHtml('#90a8c0'))
+    $gridTop = $s * 0.42; $gridLeft = $pad + $s * 0.06
+    $cell = ($s - 2 * $pad - $s * 0.12) / 4
+    $dot = [int]($cell * 0.55)
+    for ($row = 0; $row -lt 3; $row++) {
+        for ($col = 0; $col -lt 4; $col++) {
+            $x = [int]($gridLeft + $col * $cell)
+            $y = [int]($gridTop + $row * $cell)
+            $g.FillRectangle($dotBrush, $x, $y, $dot, $dot)
+        }
+    }
+    $dotBrush.Dispose()
     $bmp.Save("icons/icon-$s.png", [System.Drawing.Imaging.ImageFormat]::Png)
     $g.Dispose(); $bmp.Dispose()
 }

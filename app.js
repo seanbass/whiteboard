@@ -60,6 +60,10 @@ function render(events) {
   for (const e of upcoming) (byDate[e.date] ||= []).push(e);
 
   let html = "";
+  const todayEvents = byDate[todayStr()] || [];
+  html += todayEvents.length
+    ? ""
+    : '<div class="today-banner">Nothing scheduled today — enjoy your day!</div>';
   for (let i = 0; i < 7; i++) {
     const date = todayStr(i);
     const dayEvents = byDate[date] || [];
@@ -170,8 +174,17 @@ function showAddForm(show) {
   addSection.classList.toggle("hidden", !show);
   eventsList.classList.toggle("hidden", show);
 }
-settingsBtn.addEventListener("click", () => showAddForm(true));
+settingsBtn.addEventListener("click", () => {
+  // Entering settings also unlocks edit mode (shows Remove buttons)
+  document.body.classList.add("edit-mode");
+  showAddForm(true);
+});
 backBtn.addEventListener("click", () => showAddForm(false));
+
+// Refresh events whenever the app is reopened / regains focus
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) loadEvents({ silent: true });
+});
 
 addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
