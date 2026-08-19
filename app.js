@@ -14,13 +14,26 @@ const saveBtn = document.getElementById("saveBtn");
 const statusEl = document.getElementById("status");
 
 const CACHE_KEY = "familyEvents";
+let currentEvents = JSON.parse(localStorage.getItem(CACHE_KEY) || "[]");
+
+function setEvents(events) {
+  currentEvents = events;
+  localStorage.setItem(CACHE_KEY, JSON.stringify(events));
+  render(events);
+}
 
 // ---------- helpers ----------
 function showStatus(msg, isError = false) {
-  statusEl.textContent = msg;
+  statusEl.innerHTML = msg;
   statusEl.classList.toggle("error", isError);
   statusEl.classList.remove("hidden");
-  setTimeout(() => statusEl.classList.add("hidden"), 4000);
+  clearTimeout(showStatus._t);
+  if (!msg.includes("spinner")) {
+    showStatus._t = setTimeout(() => statusEl.classList.add("hidden"), 3000);
+  }
+}
+function showSyncing(msg) {
+  showStatus(`<span class="spinner"></span>${msg}`);
 }
 
 function todayStr(offsetDays = 0) {
@@ -133,11 +146,10 @@ function normalizeEvent(e) {
 // ---------- data ----------
 async function loadEvents({ silent = false } = {}) {
   // Show cached data immediately
-  const cached = localStorage.getItem(CACHE_KEY);
-  if (cached) render(JSON.parse(cached));
+  if (currentEvents.length) render(currentEvents);
 
   if (!API_URL) {
-    if (!cached) eventsList.innerHTML = '<p class="empty">App not connected yet.<br>See README to set the API URL.</p>';
+    if (!currentEvents.length) eventsList.innerHTML = '<p class="empty">App not connected yet.<br>See README to set the API URL.</p>';
     return;
   }
 
@@ -145,8 +157,7 @@ async function loadEvents({ silent = false } = {}) {
     const res = await fetch(API_URL);
     const data = await res.json();
     const events = (data.events || []).map(normalizeEvent);
-    localStorage.setItem(CACHE_KEY, JSON.stringify(events));
-    render(events);
+    setEvents(events);
   } catch (err) {
     if (!silent) showStatus("Couldn't reach the server — showing saved events.", true);
   }
@@ -194,24 +205,28 @@ addForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!API_URL) return showStatus("Set the API URL first (see README).", true);
 
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving…";
+  const newEvent = normalizeEvent({
+    id: "tmp-" + Date.now(),
+    title: addForm.title.value.trim(),
+    date: addForm.date.value,
+    time: addForm.time.value,
+    notes: addForm.notes.value.trim(),
+  });
+
+  // Optimistic: show it instantly and return to the list
+  setEvents([...currentEvents, newEvent]);
+  addForm.reset();
+  showAddForm(false);
+  showSyncing("Saving event\u2026");
+
   try {
-    await addEvent({
-      title: addForm.title.value.trim(),
-      date: addForm.date.value,
-      time: addForm.time.value,
-      notes: addForm.notes.value.trim(),
-    });
-    addForm.reset();
-    showStatus("Event saved!");
-    showAddForm(false);
+    await addEvent(newEvent);
     await loadEvents({ silent: true });
+    showStatus("\u2713 Event saved");
   } catch {
+    // Roll back on failure
+    setEvents(currentEvents.filter((ev) => ev.id !== newEvent.id));
     showStatus("Couldn't save. Check your connection and try again.", true);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save Event";
   }
 });
 
@@ -226,10 +241,18 @@ eventsList.addEventListener("click", async (e) => {
   const btn = e.target.closest(".event-delete");
   if (!btn) return;
   if (!confirm("Remove this event?")) return;
+
+  const id = btn.dataset.id;
+  const removed = currentEvents;
+  // Optimistic: remove it from the screen immediately
+  setEvents(currentEvents.filter((ev) => ev.id !== id));
+  showSyncing("Removing\u2026");
   try {
-    await deleteEvent(btn.dataset.id);
+    await deleteEvent(id);
     await loadEvents({ silent: true });
+    showStatus("\u2713 Event removed");
   } catch {
+    setEvents(removed); // roll back
     showStatus("Couldn't remove it. Try again.", true);
   }
 });
