@@ -86,6 +86,23 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
+// Normalize event fields in case the backend returns raw Date strings
+function normalizeEvent(e) {
+  let date = e.date || "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const d = new Date(date);
+    if (!isNaN(d)) {
+      date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+  }
+  let time = e.time || "";
+  if (time && !/^\d{2}:\d{2}$/.test(time)) {
+    const t = new Date(time);
+    time = isNaN(t) ? "" : `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+  }
+  return { ...e, date, time };
+}
+
 // ---------- data ----------
 async function loadEvents({ silent = false } = {}) {
   // Show cached data immediately
@@ -100,8 +117,9 @@ async function loadEvents({ silent = false } = {}) {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data.events));
-    render(data.events);
+    const events = (data.events || []).map(normalizeEvent);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(events));
+    render(events);
   } catch (err) {
     if (!silent) showStatus("Couldn't reach the server — showing saved events.", true);
   }
