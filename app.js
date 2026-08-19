@@ -55,7 +55,7 @@ function dayLabel(dateStr) {
   if (dateStr === todayStr(1)) return { label: "Tomorrow", cls: "tomorrow" };
   const d = new Date(dateStr + "T00:00:00");
   return {
-    label: d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }),
+    label: d.toLocaleDateString(undefined, { weekday: "short" }),
     cls: "",
   };
 }
@@ -102,7 +102,7 @@ function render(events) {
     for (const e of later) (groups[e.date] ||= []).push(e);
     for (const date of Object.keys(groups)) {
       const d = new Date(date + "T00:00:00");
-      const label = d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+      const label = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
       html += `<div class="day-group"><div class="day-heading">${label}</div>${groups[date].map(eventCard).join("")}</div>`;
     }
   }
