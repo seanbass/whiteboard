@@ -3,7 +3,9 @@
  *
  * SETUP (one time, ~5 minutes):
  * 1. Go to https://sheets.new and create a Google Sheet named "Family Events".
- *    In row 1 add headers: id | title | date | time | notes | created
+ *    In row 1 add headers: id | title | date | time | notes | created | endTime
+ *    (If you already have a sheet, just add an "endTime" header in the next
+ *     empty column — existing rows will simply have a blank end time.)
  * 2. In the sheet: Extensions > Apps Script. Delete the default code, paste this file.
  * 3. Click Deploy > New deployment > type: Web app.
  *      - Execute as: Me
@@ -33,13 +35,14 @@ function doGet() {
   const rows = sheet.getDataRange().getValues();
   const events = [];
   for (let i = 1; i < rows.length; i++) {
-    const [id, title, date, time, notes] = rows[i];
+    const [id, title, date, time, notes, created, endTime] = rows[i];
     if (!id) continue;
     events.push({
       id: String(id),
       title: String(title),
       date: date instanceof Date ? Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd") : String(date),
       time: time instanceof Date ? Utilities.formatDate(time, Session.getScriptTimeZone(), "HH:mm") : String(time || ""),
+      endTime: endTime instanceof Date ? Utilities.formatDate(endTime, Session.getScriptTimeZone(), "HH:mm") : String(endTime || ""),
       notes: String(notes || ""),
     });
   }
@@ -68,6 +71,7 @@ function doPost(e) {
         String(body.time || "").slice(0, 5),
         String(body.notes || "").slice(0, 300),
         new Date(),
+        String(body.endTime || "").slice(0, 5),
       ]);
       return jsonOut_({ ok: true, id });
     }

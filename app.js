@@ -39,7 +39,11 @@ function showSyncing(msg) {
 function todayStr(offsetDays = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  // Use LOCAL date parts (not toISOString, which is UTC and can be a day ahead).
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function formatTime(t) {
@@ -114,7 +118,7 @@ function eventCard(e) {
   return `
     <div class="event-card">
       <div class="event-title">${escapeHtml(e.title)}</div>
-      ${e.time ? `<div class="event-time">${formatTime(e.time)}</div>` : ""}
+      ${e.time ? `<div class="event-time">${formatTime(e.time)}${e.endTime ? ` \u2013 ${formatTime(e.endTime)}` : ""}</div>` : ""}
       ${e.notes ? `<div class="event-notes">${escapeHtml(e.notes)}</div>` : ""}
       <button class="event-delete" data-id="${e.id}">Remove</button>
     </div>`;
@@ -135,12 +139,15 @@ function normalizeEvent(e) {
       date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     }
   }
-  let time = e.time || "";
-  if (time && !/^\d{2}:\d{2}$/.test(time)) {
-    const t = new Date(time);
-    time = isNaN(t) ? "" : `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
-  }
-  return { ...e, date, time };
+  const normTime = (val) => {
+    let time = val || "";
+    if (time && !/^\d{2}:\d{2}$/.test(time)) {
+      const t = new Date(time);
+      time = isNaN(t) ? "" : `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+    }
+    return time;
+  };
+  return { ...e, date, time: normTime(e.time), endTime: normTime(e.endTime) };
 }
 
 // ---------- data ----------
@@ -210,6 +217,7 @@ addForm.addEventListener("submit", async (e) => {
     title: addForm.title.value.trim(),
     date: addForm.date.value,
     time: addForm.time.value,
+    endTime: addForm.endTime.value,
     notes: addForm.notes.value.trim(),
   });
 
